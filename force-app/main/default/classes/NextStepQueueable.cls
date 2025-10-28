@@ -17,7 +17,7 @@
  * 
  * Note: The class below contains placeholders for implementing a queueable job to update accounts and opportunities.
  */
-public with sharing class NextStepQueueable {
+public with sharing class NextStepQueueable implements Queueable {
 
     // Member variable to store the accounts
     private Map<Id,Account> accounts;
@@ -25,13 +25,25 @@ public with sharing class NextStepQueueable {
     // Constructor to accept the accounts
     public NextStepQueueable(Map<Id,Account> accounts) {
         // Store the accounts in a member variable
+        this.accounts = accounts;
     }
 
     // Method to queue the job
     public static void enqueueJob() {
         // Get 10 accounts with Next Step populated
-
         // If there are any accounts, queue the job using System.enqueueJob
+        // Tried with Sets, but had illegals assignments from List to Set - used Maps as there would be no assignment issue that way
+        Map<Id,Account> accMapEnqueue = new Map<Id,Account>([
+            SELECT Id, Next_Step__c
+            FROM Account
+            WHERE Next_Step__c != null
+            LIMIT 10
+        ]);
+
+        if(!accMapEnqueue.isEmpty()) {
+            System.enqueueJob(new NextStepQueueable(accMapEnqueue));
+        }
+
     }
 
     /*
@@ -53,6 +65,43 @@ public with sharing class NextStepQueueable {
 
         // Call the enqueueJob method to queue another job to process more records.
     //}
+
+    public void execute(QueueableContext context) {
+        Map<Id,Account> accountMap = new Map<Id,Account>();
+        /* 
+        ** using this.accounts as that was instantiated via the constructor and can be used throughout the class 
+        ** (only in non-static methods).
+        */
+        accountMap.putAll(this.accounts); 
+
+        /*
+        ** unsure if I need the guard clause below (think it's handled in enqueueJob method), but better safe than sorry
+        */
+        if(accountMap != null || !accountMap.isEmpty()) {
+            for(Account a : accountMap.values()) {
+                removeNextStep(a);
+            }
+        }
+
+        update accountMap.values();
+
+        Map<Id,Opportunity> oppMap = new Map<Id,Opportunity>([
+            SELECT Id, NextStep
+            FROM Opportunity
+            WHERE AccountId IN :accountMap.keySet()
+        ]);
+
+        /*
+        ** using guard clause here due to potential of Accounts not having related Opps
+        */
+        if(oppMap != null || !oppMap.isEmpty()) {
+            for(Opportunity o : oppMap.values()) {
+                removeNextStep(o);
+            }
+        }
+
+        update oppMap.values();
+    }
 
     // Helper method to remove the Next Step
     // Overloaded method to accept an opportunity
