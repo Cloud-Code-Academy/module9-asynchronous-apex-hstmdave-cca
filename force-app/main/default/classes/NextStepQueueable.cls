@@ -77,7 +77,7 @@ public with sharing class NextStepQueueable implements Queueable {
         /*
         ** unsure if I need the guard clause below (think it's handled in enqueueJob method), but better safe than sorry
         */
-        if(accountMap != null || !accountMap.isEmpty()) {
+        if(!accountMap.isEmpty()) {
             for(Account a : accountMap.values()) {
                 removeNextStep(a);
             }
@@ -94,13 +94,16 @@ public with sharing class NextStepQueueable implements Queueable {
         /*
         ** using guard clause here due to potential of Accounts not having related Opps
         */
-        if(oppMap != null || !oppMap.isEmpty()) {
+        if(!oppMap.isEmpty()) {
             for(Opportunity o : oppMap.values()) {
                 removeNextStep(o);
             }
         }
 
         update oppMap.values();
+
+        // Chain to process the next batch of records
+        enqueueJob();
     }
 
     // Helper method to remove the Next Step

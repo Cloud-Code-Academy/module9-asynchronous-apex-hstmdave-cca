@@ -46,7 +46,7 @@ public with sharing class NextStepBatch implements Database.Batchable<sObject>{
 
         // Update the opportunity records
 
-        if(scope != null || !scope.isEmpty()) {
+        if(!scope.isEmpty()) {
             for(Account a : scope) {
                 a.Next_Step__c = BATCH_NEXT_STEP;
             }
@@ -60,7 +60,7 @@ public with sharing class NextStepBatch implements Database.Batchable<sObject>{
             WHERE AccountId IN :scope
         ];
 
-        if(oppList != null || !oppList.isEmpty()) {
+        if(!oppList.isEmpty()) {
             for(Opportunity o : oppList) {
                 o.NextStep = BATCH_NEXT_STEP;
             }
@@ -79,7 +79,7 @@ public with sharing class NextStepBatch implements Database.Batchable<sObject>{
         
         Set<String> userEmails = new Set<String>();
 
-        if(USERS != null || !USERS.isEmpty()) {
+        if(!USERS.isEmpty()) {
             for(User u : USERS) {
                 if(String.isNotEmpty(u.Email)) {
                     userEmails.add(u.Email);
@@ -87,7 +87,7 @@ public with sharing class NextStepBatch implements Database.Batchable<sObject>{
             }
         }
 
-        if(userEmails != null || !userEmails.isEmpty()) {
+        if(!userEmails.isEmpty()) {
             sendEmailToActiveUsers(userEmails);
         }
     }
