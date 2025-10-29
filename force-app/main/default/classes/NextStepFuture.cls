@@ -31,6 +31,30 @@ public with sharing class NextStepFuture {
     //  The body of the method
     //}
 
+    @future
+    public static void updateNextSteps() {
+        List<Account> accounts = [
+            SELECT Id 
+            FROM Account
+        ];
+
+        List<Opportunity> opps = [
+            SELECT Id
+            FROM Opportunity
+        ];
+
+        for(Account a : accounts) {
+            a.Next_Step__c = 'Meeting in the future';
+        }
+
+        for(Opportunity o : opps) {
+            o.NextStep = 'Meeting in the future';
+        }
+
+        update accounts;
+        update opps;
+    }
+
     /*
     * Question 2
     * Update/Uncomment the template code to create a method
@@ -42,6 +66,12 @@ public with sharing class NextStepFuture {
         Opportunity bigDeal = new Opportunity();
         insertBigDeal(bigDeal);
 
+        futureUpdateUserRole();
+    }
+
+    // New future method to separate the DML operations
+    @future
+    private static void futureUpdateUserRole() {
         UserRole[] roles = [SELECT Id, Name FROM UserRole WHERE Id = :UserInfo.getUserRoleId() OR Name = 'CRO' LIMIT 1];
         updateUserRoleName(roles);
     }

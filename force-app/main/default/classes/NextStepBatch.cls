@@ -22,7 +22,9 @@ public with sharing class NextStepBatch implements Database.Batchable<sObject>{
 
     public Database.QueryLocator start(Database.BatchableContext bc){
         // Query for all accounts and return the query locator.
-        return null; // Update null with the query locator
+        // Update null with the query locator
+
+        return Database.getQueryLocator('Select Id FROM Account'); 
     }
     
     public void execute(Database.BatchableContext bc, List<Account> scope){
@@ -44,6 +46,28 @@ public with sharing class NextStepBatch implements Database.Batchable<sObject>{
 
         // Update the opportunity records
 
+        if(!scope.isEmpty()) {
+            for(Account a : scope) {
+                a.Next_Step__c = BATCH_NEXT_STEP;
+            }
+        }
+
+        update scope;
+
+        List<Opportunity> oppList = [
+            SELECT Id
+            FROM Opportunity
+            WHERE AccountId IN :scope
+        ];
+
+        if(!oppList.isEmpty()) {
+            for(Opportunity o : oppList) {
+                o.NextStep = BATCH_NEXT_STEP;
+            }
+        }
+
+        update oppList;
+
     }
     
     public void finish(Database.BatchableContext bc){
@@ -52,6 +76,20 @@ public with sharing class NextStepBatch implements Database.Batchable<sObject>{
         // Get the email addresses of all active users
 
             // Pass the set of active user emails to the sendEmailToActiveUsers method
+        
+        Set<String> userEmails = new Set<String>();
+
+        if(!USERS.isEmpty()) {
+            for(User u : USERS) {
+                if(String.isNotEmpty(u.Email)) {
+                    userEmails.add(u.Email);
+                }
+            }
+        }
+
+        if(!userEmails.isEmpty()) {
+            sendEmailToActiveUsers(userEmails);
+        }
     }
 
     // Helper method to send an email to all emails in the set
